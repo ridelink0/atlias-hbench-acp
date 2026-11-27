@@ -23,8 +23,18 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from acp import PROTOCOL_VERSION, run_agent
-from acp.schema import AgentCapabilities, Implementation, InitializeResponse, NewSessionResponse, PromptResponse, Usage
+from acp import PROTOCOL_VERSION, RequestError, run_agent
+from acp.schema import (AgentCapabilities, Implementation, InitializeResponse, NewSessionResponse, PromptResponse,
+                        SessionConfigOptionSelect, SessionConfigSelectOption, SetSessionConfigOptionResponse, Usage)
+
+# The bridge runs Atlias on one model (Claude Haiku 5.5 at low effort). hbench selects the model through this option;
+# any other value is refused instead of being silently swapped.
+MODEL = "anthropic/claude-haiku-5-5"
+
+
+def model_option() -> SessionConfigOptionSelect:
+    return SessionConfigOptionSelect(id="model", name="Model", category="model", type="select", current_value=MODEL,
+                                     options=[SessionConfigSelectOption(value=MODEL, name="Claude Haiku 5.5")])
 
 __version__ = "0.1.0"
 BRIDGE = os.environ.get("ATLIAS_BRIDGE_URL", "http://host.docker.internal:18788/run")
@@ -76,7 +86,12 @@ class AtliasAgent:
     async def new_session(self, cwd: str, **kw: Any) -> NewSessionResponse:
         sid = uuid.uuid4().hex
         self.sessions[sid] = cwd
-        return NewSessionResponse(session_id=sid)
+        return NewSessionResponse(session_id=sid, config_options=[model_option()])
+
+    async def set_config_option(self, config_id: str, session_id: str, value: Any, **kw: Any) -> SetSessionConfigOptionResponse:
+        if config_id != "model" or value not in (MODEL, MODEL.split("/", 1)[1]):
+            raise RequestError(-32602, f"Atlias on hbench runs {MODEL} only; {config_id}={value} is not available")
+        return SetSessionConfigOptionResponse(config_options=[model_option()])
 
     async def authenticate(self, **kw: Any) -> None:
         return None
