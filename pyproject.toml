@@ -1,0 +1,16 @@
+[project]
+name = "atlias-hbench-acp"
+version = "0.1.0"
+description = "Thin ACP agent that runs Atlias (https://atlias.ridelinkmaps.com) on hbench tasks through an operator-side bridge. Contains no Atlias code."
+requires-python = ">=3.12"
+dependencies = ["agent-client-protocol==1.1.0"]
+
+[project.scripts]
+atlias-hbench-acp = "atlias_hbench_acp:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlias_hbench_acp"]
