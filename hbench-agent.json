@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "atlias",
+  "version": "0.1.0",
+  "protocol": "acp",
+  "runtime": {
+    "kind": "python-uv",
+    "python": "3.12",
+    "entrypoint": ["atlias-hbench-acp"]
+  }
+}
