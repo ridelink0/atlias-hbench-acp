@@ -102,7 +102,10 @@ class AtliasAgent:
     async def prompt(self, session_id: str, prompt: list[Any], **kw: Any) -> PromptResponse:
         text = "\n".join(getattr(b, "text", "") for b in prompt if getattr(b, "type", "") == "text")
         root = Path(self.sessions.get(session_id) or os.getcwd())
-        body = {"token": os.environ.get("ATLIAS_BRIDGE_TOKEN", ""), "prompt": text, "tar": base64.b64encode(pack(root)).decode()}
+        # cwd lets the bridge turn the task's absolute container paths (for example /app/solution.py) into paths
+        # relative to the copy Atlias works in.
+        body = {"token": os.environ.get("ATLIAS_BRIDGE_TOKEN", ""), "prompt": text, "cwd": str(root),
+                "tar": base64.b64encode(pack(root)).decode()}
         res = await asyncio.to_thread(post, body, float(os.environ.get("ATLIAS_BRIDGE_TIMEOUT", "1800")))
         if res.get("tar"):
             unpack(base64.b64decode(res["tar"]), root, res.get("deleted") or [])
